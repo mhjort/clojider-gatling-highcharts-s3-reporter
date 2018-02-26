@@ -11,6 +11,7 @@
            [com.amazonaws.auth DefaultAWSCredentialsProviderChain]
            [com.amazonaws.services.s3 AmazonS3Client]))
 
+;TODO Add a way to use other than default credentials
 (def aws-credentials
   (delay (.getCredentials (DefaultAWSCredentialsProviderChain.))))
 
@@ -28,11 +29,10 @@
 (defn- path-join [& paths]
   (.getCanonicalPath (apply io/file paths)))
 
-(defn start-time []
+(defn- start-time []
   (LocalDateTime.))
 
-(defn s3-writer [bucket-name results-dir start simulation {:keys [node-id batch-id batch]}]
-  ;TODO We need executor node id here
+(defn- s3-writer [bucket-name results-dir start simulation {:keys [node-id batch-id batch]}]
   (let [custom-formatter (f/formatter "yyyyMMddHHmmss")
         timestamp (f/unparse custom-formatter (t/now))
         file-name (first (csv-writer results-dir start simulation batch-id batch))
@@ -42,26 +42,24 @@
     (.delete (File. file-name))
     [s3-object-key]))
 
-(defn download-file [results-dir bucket object-key]
+(defn- download-file [results-dir bucket object-key]
   (io/copy (.getObjectContent (.getObject @s3-client bucket object-key))
            (io/file (str results-dir "/" (last (split object-key #"/"))))))
 
-(defn download-logs-and-create-chart [results bucket-name folder-name]
-  (let [input-dir (str "tmp/" folder-name "/input")]
-    (create-dir input-dir)
-    (println "Downloading" results "from" bucket-name)
-    (doseq [result results]
-      (download-file input-dir bucket-name result))
-    (create-chart (str "tmp/" folder-name))))
+(defn- download-logs-and-create-chart [results bucket-name input-dir results-dir]
+  (println "Downloading" results "from" bucket-name)
+  ;TODO Read these in parallel
+  (doseq [result results]
+    (download-file input-dir bucket-name result))
+  (create-chart results-dir))
 
 (defn gatling-highcharts-s3-reporter [bucket-name region results-dir]
-  (println "Using S3 reporter")
   (create-results-bucket bucket-name region)
-  (let [log-dir (path-join results-dir "input")]
-    (create-dir log-dir)
+  (let [input-dir (path-join results-dir "input")]
+    (create-dir input-dir)
     {:reporter-key :highcharts-s3
-     :parser (partial s3-writer bucket-name log-dir (start-time))
+     :parser (partial s3-writer bucket-name input-dir (start-time))
      :combiner concat
      :generator (fn [results]
-                  (download-logs-and-create-chart results bucket-name "testing")
+                  (download-logs-and-create-chart results bucket-name input-dir results-dir)
                   (println (str "Open " results-dir "/index.html with your browser to see a detailed report." )))}))
