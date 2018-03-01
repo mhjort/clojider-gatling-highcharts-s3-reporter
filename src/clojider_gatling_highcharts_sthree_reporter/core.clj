@@ -53,13 +53,14 @@
     (download-file input-dir bucket-name result))
   (create-chart results-dir))
 
-(defn gatling-highcharts-s3-reporter [bucket-name region results-dir]
-  (create-results-bucket bucket-name region)
-  (let [input-dir (path-join results-dir "input")]
-    (create-dir input-dir)
-    {:reporter-key :highcharts-s3
-     :parser (partial s3-writer bucket-name input-dir (start-time))
-     :combiner concat
-     :generator (fn [results]
-                  (download-logs-and-create-chart results bucket-name input-dir results-dir)
-                  (println (str "Open " results-dir "/index.html with your browser to see a detailed report." )))}))
+(defn gatling-highcharts-s3-reporter [bucket-name region]
+  (fn [{:keys [results-dir]}]
+    (let [input-dir (path-join results-dir "input")]
+      (create-dir input-dir)
+      (create-results-bucket bucket-name region)
+      {:reporter-key :highcharts-s3
+       :parser (partial s3-writer bucket-name input-dir (start-time))
+       :combiner concat
+       :generator (fn [results]
+                    (download-logs-and-create-chart results bucket-name input-dir results-dir)
+                    (println (str "Open " results-dir "/index.html with your browser to see a detailed report." )))})))
