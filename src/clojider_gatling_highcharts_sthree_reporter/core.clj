@@ -53,9 +53,11 @@
     (download-file input-dir bucket-name result))
   (create-chart results-dir))
 
-(defn gatling-highcharts-s3-reporter [bucket-name region]
-  (fn [{:keys [results-dir]}]
-    (let [input-dir (path-join results-dir "input")]
+(def gatling-highcharts-s3-reporter
+  (fn [{:keys [context results-dir]}]
+    (let [bucket-name (:bucket-name context)
+          region (:regiion context)
+          input-dir (path-join results-dir "input")]
       (create-dir input-dir)
       (create-results-bucket bucket-name region)
       {:reporter-key :highcharts-s3
