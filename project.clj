@@ -1,4 +1,4 @@
-(defproject clojider-gatling-highcharts-s3-reporter "0.1.0"
+(defproject clojider-gatling-highcharts-s3-reporter "0.1.1"
   :description "Gatling Highcharts AWS S3 Reporter for clj-gatling"
   :url "https://github.com/mhjort/clojider-gatling-highcharts-s3-reporter"
   :license {:name "Eclipse Public License"
