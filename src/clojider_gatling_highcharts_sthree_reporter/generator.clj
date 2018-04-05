@@ -47,5 +47,6 @@
       (create-dir input-dir)
       (create-results-bucket bucket-name region)
       {:generate (fn [results]
-                   (download-logs-and-create-chart results bucket-name input-dir results-dir)
-                   (println (str "Open " results-dir "/index.html with your browser to see a detailed report." )))})))
+                   (download-logs-and-create-chart results bucket-name input-dir results-dir))
+       :as-str (fn [summary]
+                 (str "Open " results-dir "/index.html with your browser to see a detailed report."))})))
